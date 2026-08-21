@@ -1,5 +1,5 @@
 -- ====================================================================
--- ADVANCED DEV-SOFT SUITE (INFINITE YIELD STYLE) - FIXED & OPTIMIZED
+-- FINAL FIXED DEV-SOFT SUITE (INFINITE YIELD STYLE) - 100% STABLE
 -- ====================================================================
 
 local Players = game:GetService("Players")
@@ -23,7 +23,7 @@ local states = {
     InfSpeed = false
 }
 
--- Таблица изменяемых горячих клавиш (Keybinds)
+-- Таблица горячих клавиш (Keybinds)
 local HOTKEYS = {
     Fly = Enum.KeyCode.F,
     Noclip = Enum.KeyCode.N,
@@ -32,7 +32,7 @@ local HOTKEYS = {
     InfSpeed = Enum.KeyCode.G
 }
 
--- Имена функций для красивого отображения в UI
+-- Имена для вывода на экран
 local FEATURE_NAMES = {
     Fly = "Fly (Полет)",
     Noclip = "Noclip (Стены)",
@@ -47,21 +47,17 @@ screenGui.Name = "InfiniteDevSoftSuite"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Функция для безопасного перетаскивания элементов (Вместо устаревшего .Draggable)
+-- СУПЕРСТАБИЛЬНАЯ ФУНКЦИЯ ПЕРЕТАСКИВАНИЯ (Поддерживает ПК и Телефоны)
 local function makeDraggable(frame)
-    local dragging, dragInput, dragStart, startPos
-
-    local function update(input)
-        local delta = input.Position - dragStart
-        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
+    local dragging = false
+    local dragInput, dragStart, startPos
 
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
-
+            
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -78,7 +74,13 @@ local function makeDraggable(frame)
 
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
-            update(input)
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(
+                startPos.X.Scale, 
+                startPos.X.Offset + delta.X, 
+                startPos.Y.Scale, 
+                startPos.Y.Offset + delta.Y
+            )
         end
     end)
 end
@@ -109,7 +111,7 @@ makeDraggable(mainFrame)
 -- Заголовок панели
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 35)
-title.Text = "⚡ INFINITE DEV-SOFT v3.1 ⚡"
+title.Text = "⚡ INFINITE DEV-SOFT v3.2 ⚡"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 title.Font = Enum.Font.SourceSansBold
@@ -121,10 +123,10 @@ titleCorner.Parent = title
 
 -- ЦЕНТРАЛЬНОЕ / ГЛАВНОЕ МЕНЮ БЫСТРЫХ КНОПОК
 local quickActionsFrame = Instance.new("Frame")
-quickActionsFrame.Size = UDim2.new(0, 150, 0, 250)
+quickActionsFrame.Size = UDim2.new(0, 160, 0, 250)
 quickActionsFrame.Position = UDim2.new(0.4, 0, 0.4, 0)
-quickActionsFrame.BackgroundTransparency = 0.8
-quickActionsFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+quickActionsFrame.BackgroundTransparency = 0.5
+quickActionsFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 quickActionsFrame.Parent = screenGui
 Instance.new("UICorner", quickActionsFrame).CornerRadius = UDim.new(0, 6)
 makeDraggable(quickActionsFrame)
@@ -132,11 +134,18 @@ makeDraggable(quickActionsFrame)
 local quickTitle = Instance.new("TextLabel")
 quickTitle.Size = UDim2.new(1, 0, 0, 25)
 quickTitle.Text = "📌 ГЛАВНЫЙ ЭКРАН"
-quickTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
-quickTitle.BackgroundTransparency = 1
+quickTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+quickTitle.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 quickTitle.Font = Enum.Font.SourceSansBold
 quickTitle.TextSize = 11
 quickTitle.Parent = quickActionsFrame
+Instance.new("UICorner", quickTitle).CornerRadius = UDim.new(0, 6)
+
+local quickPadding = Instance.new("UIPadding")
+quickPadding.PaddingTop = UDim.new(0, 30)
+quickPadding.PaddingLeft = UDim.new(0, 5)
+quickPadding.PaddingRight = UDim.new(0, 5)
+quickPadding.Parent = quickActionsFrame
 
 local quickLayout = Instance.new("UIListLayout")
 quickLayout.Padding = UDim.new(0, 5)
@@ -177,6 +186,7 @@ toggleMenuBtn.MouseButton1Click:Connect(function()
     toggleMenuBtn.BackgroundColor3 = mainFrame.Visible and Color3.fromRGB(0, 120, 200) or Color3.fromRGB(40, 160, 80)
 end)
 
+-- Исправленное обновление виджетов без вылетов
 local function updateQuickWidget(actionName)
     local widget = quickActionsFrame:FindFirstChild(actionName .. "_Quick")
     if widget then
@@ -241,35 +251,14 @@ local function createFeatureRow(actionName, positionY)
         else
             local quickBtn = Instance.new("TextButton")
             quickBtn.Name = quickName
-            quickBtn.Size = UDim2.new(1, -10, 0, 32)
+            quickBtn.Size = UDim2.new(1, 0, 0, 32)
             quickBtn.Font = Enum.Font.SourceSansBold
             quickBtn.TextSize = 11
             quickBtn.Parent = quickActionsFrame
             Instance.new("UICorner", quickBtn).CornerRadius = UDim.new(0, 5)
             
-            updateQuickWidget(actionName)
-            
-            quickBtn.MouseButton1Click:Connect(function()
-                button:Click()
-            end)
-        end
-    end)
-end
-
-createFeatureRow("Fly", 50)
-createFeatureRow("Noclip", 95)
-createFeatureRow("InfJump", 140)
-createFeatureRow("Wallhop", 185)
-createFeatureRow("InfSpeed", 230)
-
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if bindingAction and input.UserInputType == Enum.UserInputType.Keyboard then
-        HOTKEYS[bindingAction] = input.KeyCode
-        keybindButtons[bindingAction].Text = input.KeyCode.Name
-        keybindButtons[bindingAction].BackgroundColor3 = Color3.fromRGB(55, 55, 55)
-        updateQuickWidget(bindingAction)
-        bindingAction = nil
-    end
-end)
-
-local function syncVisuals(actionName)
+            -- Первичная отрисовка
+            local active = states[actionName]
+            local keyName = HOTKEYS[actionName] and HOTKEYS[actionName].Name or "NONE"
+            quickBtn.Text = FEATURE_NAMES[actionName] .. " [" .. keyName .. "]: " .. (active and "ON" or "OFF")
+            quickBtn.BackgroundColor3 = active and Color3.fromRGB(45, 100, 45) or Color3.fromRGB(40, 40, 40)
