@@ -1,5 +1,5 @@
 -- ====================================================================
--- ADVANCED DEV-SOFT SUITE (INFINITE YIELD STYLE) - MOBILE & PC PRO
+-- ADVANCED DEV-SOFT SUITE (INFINITE YIELD STYLE) - FIXED & OPTIMIZED
 -- ====================================================================
 
 local Players = game:GetService("Players")
@@ -47,6 +47,42 @@ screenGui.Name = "InfiniteDevSoftSuite"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
+-- Функция для безопасного перетаскивания элементов (Вместо устаревшего .Draggable)
+local function makeDraggable(frame)
+    local dragging, dragInput, dragStart, startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end
+
 -- Кнопка Свернуть/Развернуть софт
 local toggleMenuBtn = Instance.new("TextButton")
 toggleMenuBtn.Size = UDim2.new(0, 120, 0, 35)
@@ -56,10 +92,9 @@ toggleMenuBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleMenuBtn.Text = "📁 СКРЫТЬ СОФТ"
 toggleMenuBtn.Font = Enum.Font.SourceSansBold
 toggleMenuBtn.TextSize = 14
-toggleMenuBtn.Active = true
-toggleMenuBtn.Draggable = true
 toggleMenuBtn.Parent = screenGui
 Instance.new("UICorner", toggleMenuBtn).CornerRadius = UDim.new(0, 6)
+makeDraggable(toggleMenuBtn)
 
 -- Главный контейнер софта
 local mainFrame = Instance.new("Frame")
@@ -67,15 +102,14 @@ mainFrame.Size = UDim2.new(0, 250, 0, 560)
 mainFrame.Position = UDim2.new(0, 15, 0.1, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 mainFrame.BorderSizePixel = 0
-mainFrame.Active = true
-mainFrame.Draggable = true
 mainFrame.Parent = screenGui
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 8)
+makeDraggable(mainFrame)
 
 -- Заголовок панели
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 35)
-title.Text = "⚡ INFINITE DEV-SOFT v3.0 ⚡"
+title.Text = "⚡ INFINITE DEV-SOFT v3.1 ⚡"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 title.Font = Enum.Font.SourceSansBold
@@ -85,16 +119,15 @@ local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 8)
 titleCorner.Parent = title
 
--- ЦЕНТРАЛЬНОЕ / ГЛАВНОЕ МЕНЮ БЫСТРЫХ КНОПОК (Перетаскиваемое)
+-- ЦЕНТРАЛЬНОЕ / ГЛАВНОЕ МЕНЮ БЫСТРЫХ КНОПОК
 local quickActionsFrame = Instance.new("Frame")
 quickActionsFrame.Size = UDim2.new(0, 150, 0, 250)
-quickActionsFrame.Position = UDim2.new(0.4, 0, 0.4, 0) -- По центру экрана по умолчанию
+quickActionsFrame.Position = UDim2.new(0.4, 0, 0.4, 0)
 quickActionsFrame.BackgroundTransparency = 0.8
 quickActionsFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-quickActionsFrame.Active = true
-quickActionsFrame.Draggable = true
 quickActionsFrame.Parent = screenGui
 Instance.new("UICorner", quickActionsFrame).CornerRadius = UDim.new(0, 6)
+makeDraggable(quickActionsFrame)
 
 local quickTitle = Instance.new("TextLabel")
 quickTitle.Size = UDim2.new(1, 0, 0, 25)
@@ -138,14 +171,12 @@ local function getHumanoid()
     return player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 end
 
--- Переключение сворачивания меню
 toggleMenuBtn.MouseButton1Click:Connect(function()
     mainFrame.Visible = not mainFrame.Visible
     toggleMenuBtn.Text = mainFrame.Visible and "📁 СКРЫТЬ СОФТ" or "📂 ОТКРЫТЬ СОФТ"
     toggleMenuBtn.BackgroundColor3 = mainFrame.Visible and Color3.fromRGB(0, 120, 200) or Color3.fromRGB(40, 160, 80)
 end)
 
--- Обновление быстрых кнопок на главном экране
 local function updateQuickWidget(actionName)
     local widget = quickActionsFrame:FindFirstChild(actionName .. "_Quick")
     if widget then
@@ -157,7 +188,6 @@ local function updateQuickWidget(actionName)
     end
 end
 
--- Создание основных кнопок управления внутри фрейма
 local mainButtons = {}
 local keybindButtons = {}
 local bindingAction = nil
@@ -176,7 +206,6 @@ local function createFeatureRow(actionName, positionY)
     Instance.new("UICorner", button).CornerRadius = UDim.new(0, 5)
     mainButtons[actionName] = button
 
-    -- Кнопка смены бинда
     local bindBtn = Instance.new("TextButton")
     bindBtn.Size = UDim2.new(0, 45, 0, 35)
     bindBtn.Position = UDim2.new(0, 160, 0, positionY)
@@ -195,7 +224,6 @@ local function createFeatureRow(actionName, positionY)
         bindBtn.BackgroundColor3 = Color3.fromRGB(120, 90, 0)
     end)
 
-    -- Кнопка вывода на Главный Экран (Звездочка ⭐)
     local pin = Instance.new("TextButton")
     pin.Size = UDim2.new(0, 30, 0, 35)
     pin.Position = UDim2.new(0, 210, 0, positionY)
@@ -222,20 +250,18 @@ local function createFeatureRow(actionName, positionY)
             updateQuickWidget(actionName)
             
             quickBtn.MouseButton1Click:Connect(function()
-                button:Click() -- Клик по виджету симулирует нажатие основной кнопки
+                button:Click()
             end)
         end
     end)
 end
 
--- Отрисовка функциональных рядов
 createFeatureRow("Fly", 50)
 createFeatureRow("Noclip", 95)
 createFeatureRow("InfJump", 140)
 createFeatureRow("Wallhop", 185)
 createFeatureRow("InfSpeed", 230)
 
--- Обработка переназначения клавиш
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if bindingAction and input.UserInputType == Enum.UserInputType.Keyboard then
         HOTKEYS[bindingAction] = input.KeyCode
@@ -246,28 +272,4 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Общая функция для обновления визуалов
 local function syncVisuals(actionName)
-    local active = states[actionName]
-    local btn = mainButtons[actionName]
-    if btn then
-        btn.Text = FEATURE_NAMES[actionName] .. (active and ": ON" or ": OFF")
-        btn.BackgroundColor3 = active and Color3.fromRGB(45, 100, 45) or Color3.fromRGB(40, 40, 40)
-        btn.TextColor3 = active and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(240, 80, 80)
-    end
-    updateQuickWidget(actionName)
-end
-
--- Поля текстового ввода лимитов физики
-local function createInputField(placeholder, positionY)
-    local box = Instance.new("TextBox")
-    box.Size = UDim2.new(1, -20, 0, 30)
-    box.Position = UDim2.new(0, 10, 0, positionY)
-    box.PlaceholderText = placeholder
-    box.Text = ""
-    box.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-
-
-
-
-
