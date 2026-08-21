@@ -1,5 +1,5 @@
 -- ====================================================================
--- ADVANCED DEV-SOFT SUITE (INFINITE YIELD STYLE) - FIXED & OPTIMIZED
+-- ADVANCED DEV-SOFT SUITE (INFINITE YIELD STYLE) - FIXED & OPTI
 -- ====================================================================
 
 local Players = game:GetService("Players")
