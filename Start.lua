@@ -1,4 +1,7 @@
--- Сервисы игры
+-- ====================================================================
+-- ADVANCED DEV-SOFT SUITE (INFINITE YIELD STYLE) - MOBILE & PC PRO
+-- ====================================================================
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -6,154 +9,182 @@ local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
--- Настройки по умолчанию
+-- Дефолтные настройки физики
 local flySpeed = 50
 local normalSpeed = 16
 local normalJump = 50
 
--- Переменные состояний (флаги)
-local isFlying = false
-local isNoclip = false
-local isInfJump = false
-local isWallhopEnabled = false
+-- Состояния (флаги)
+local states = {
+    Fly = false,
+    Noclip = false,
+    InfJump = false,
+    Wallhop = false,
+    InfSpeed = false
+}
 
--- Горячие клавиши для ПК (теперь их можно менять)
+-- Таблица изменяемых горячих клавиш (Keybinds)
 local HOTKEYS = {
     Fly = Enum.KeyCode.F,
     Noclip = Enum.KeyCode.N,
     InfJump = Enum.KeyCode.J,
-    Wallhop = Enum.KeyCode.H
+    Wallhop = Enum.KeyCode.H,
+    InfSpeed = Enum.KeyCode.G
 }
 
--- Создание UI (Главная панель)
+-- Имена функций для красивого отображения в UI
+local FEATURE_NAMES = {
+    Fly = "Fly (Полет)",
+    Noclip = "Noclip (Стены)",
+    InfJump = "Inf Jump (Прыжки)",
+    Wallhop = "Wallhop (От стен)",
+    InfSpeed = "Inf Speed (Бег)"
+}
+
+-- Создание интерфейса (Core UI)
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "DevAdminPanelUltimate"
+screenGui.Name = "InfiniteDevSoftSuite"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Кнопка Свернуть/Развернуть меню (Всегда видна и ее можно двигать)
+-- Кнопка Свернуть/Развернуть софт
 local toggleMenuBtn = Instance.new("TextButton")
-toggleMenuBtn.Size = UDim2.new(0, 110, 0, 35)
-toggleMenuBtn.Position = UDim2.new(0, 15, 0.1, -40)
+toggleMenuBtn.Size = UDim2.new(0, 120, 0, 35)
+toggleMenuBtn.Position = UDim2.new(0, 15, 0.1, -45)
 toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
 toggleMenuBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleMenuBtn.Text = "📁 СКРЫТЬ МЕНЮ"
+toggleMenuBtn.Text = "📁 СКРЫТЬ СОФТ"
 toggleMenuBtn.Font = Enum.Font.SourceSansBold
 toggleMenuBtn.TextSize = 14
 toggleMenuBtn.Active = true
-toggleMenuBtn.Draggable = true -- Кнопку открытия/закрытия тоже можно двигать
+toggleMenuBtn.Draggable = true
 toggleMenuBtn.Parent = screenGui
 Instance.new("UICorner", toggleMenuBtn).CornerRadius = UDim.new(0, 6)
 
--- Основной контейнер для меню
+-- Главный контейнер софта
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 240, 0, 500)
+mainFrame.Size = UDim2.new(0, 250, 0, 560)
 mainFrame.Position = UDim2.new(0, 15, 0.1, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
-mainFrame.Draggable = true -- Меню можно свободно перетаскивать пальцем/мышкой
+mainFrame.Draggable = true
 mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 8)
 
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 8)
-uiCorner.Parent = mainFrame
-
--- Заголовок меню
+-- Заголовок панели
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 35)
-title.Text = "DEV PANEL v2.0"
+title.Text = "⚡ INFINITE DEV-SOFT v3.0 ⚡"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 title.Font = Enum.Font.SourceSansBold
-title.TextSize = 14
+title.TextSize = 13
 title.Parent = mainFrame
 local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 8)
 titleCorner.Parent = title
 
--- Логика скрытия/показа меню
-toggleMenuBtn.MouseButton1Click:Connect(function()
-    mainFrame.Visible = not mainFrame.Visible
-    if mainFrame.Visible then
-        toggleMenuBtn.Text = "📁 СКРЫТЬ МЕНЮ"
-        toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
-    else
-        toggleMenuBtn.Text = "📂 ОТКРЫТЬ МЕНЮ"
-        toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
-    end
-end)
-
--- Панель быстрых кнопок на главном экране (Её можно перетаскивать отдельно!)
+-- ЦЕНТРАЛЬНОЕ / ГЛАВНОЕ МЕНЮ БЫСТРЫХ КНОПОК (Перетаскиваемое)
 local quickActionsFrame = Instance.new("Frame")
-quickActionsFrame.Size = UDim2.new(0, 140, 0, 200)
-quickActionsFrame.Position = UDim2.new(0, 15, 0.5, 0) -- По умолчанию снизу слева
-quickActionsFrame.BackgroundTransparency = 1
+quickActionsFrame.Size = UDim2.new(0, 150, 0, 250)
+quickActionsFrame.Position = UDim2.new(0.4, 0, 0.4, 0) -- По центру экрана по умолчанию
+quickActionsFrame.BackgroundTransparency = 0.8
+quickActionsFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 quickActionsFrame.Active = true
-quickActionsFrame.Draggable = true -- Перетаскивайте быстрые кнопки куда угодно!
+quickActionsFrame.Draggable = true
 quickActionsFrame.Parent = screenGui
+Instance.new("UICorner", quickActionsFrame).CornerRadius = UDim.new(0, 6)
+
+local quickTitle = Instance.new("TextLabel")
+quickTitle.Size = UDim2.new(1, 0, 0, 25)
+quickTitle.Text = "📌 ГЛАВНЫЙ ЭКРАН"
+quickTitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+quickTitle.BackgroundTransparency = 1
+quickTitle.Font = Enum.Font.SourceSansBold
+quickTitle.TextSize = 11
+quickTitle.Parent = quickActionsFrame
 
 local quickLayout = Instance.new("UIListLayout")
 quickLayout.Padding = UDim.new(0, 5)
 quickLayout.Parent = quickActionsFrame
 
--- Мобильный интерфейс управления Fly
+-- Мобильный интерфейс для Fly (Вверх / Вниз)
 local mobileFlyControls = Instance.new("Frame")
-mobileFlyControls.Size = UDim2.new(0, 70, 0, 150)
+mobileFlyControls.Size = UDim2.new(0, 70, 0, 140)
 mobileFlyControls.Position = UDim2.new(0.85, 0, 0.4, 0)
 mobileFlyControls.BackgroundTransparency = 1
 mobileFlyControls.Visible = false
 mobileFlyControls.Parent = screenGui
 
+local function createMobileFlyBtn(text, posPercentY)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, 0, 0, 45)
+    b.Position = UDim2.new(0, 0, posPercentY, 0)
+    b.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    b.BackgroundTransparency = 0.4
+    b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.Text = text
+    b.Font = Enum.Font.SourceSansBold
+    b.TextSize = 16
+    b.Parent = mobileFlyControls
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    return b
+end
+local mobileUp = createMobileFlyBtn("▲ ВВЕРХ", 0)
+local mobileDown = createMobileFlyBtn("▼ ВНИЗ", 0.4)
+
 local function getHumanoid()
     return player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 end
 
--- Переменные для отслеживания изменения клавиш
-local bindingAction = nil
-local keybindButtons = {}
+-- Переключение сворачивания меню
+toggleMenuBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+    toggleMenuBtn.Text = mainFrame.Visible and "📁 СКРЫТЬ СОФТ" or "📂 ОТКРЫТЬ СОФТ"
+    toggleMenuBtn.BackgroundColor3 = mainFrame.Visible and Color3.fromRGB(0, 120, 200) or Color3.fromRGB(40, 160, 80)
+end)
 
--- Функция обновления быстрого виджета
-local function updateQuickActionWidget(actionName, text, state, hotkeyEnum)
-    local quickBtn = quickActionsFrame:FindFirstChild(actionName .. "_Quick")
-    if quickBtn then
-        local keyText = hotkeyEnum and (" ["..hotkeyEnum.Name.."]") or ""
-        if state then
-            quickBtn.Text = text .. keyText .. ": ON"
-            quickBtn.BackgroundColor3 = Color3.fromRGB(45, 100, 45)
-            quickBtn.TextColor3 = Color3.fromRGB(100, 255, 100)
-        else
-            quickBtn.Text = text .. keyText .. ": OFF"
-            quickBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-            quickBtn.TextColor3 = Color3.fromRGB(240, 80, 80)
-        end
+-- Обновление быстрых кнопок на главном экране
+local function updateQuickWidget(actionName)
+    local widget = quickActionsFrame:FindFirstChild(actionName .. "_Quick")
+    if widget then
+        local active = states[actionName]
+        local keyName = HOTKEYS[actionName] and HOTKEYS[actionName].Name or "NONE"
+        widget.Text = FEATURE_NAMES[actionName] .. " [" .. keyName .. "]: " .. (active and "ON" or "OFF")
+        widget.BackgroundColor3 = active and Color3.fromRGB(45, 100, 45) or Color3.fromRGB(40, 40, 40)
+        widget.TextColor3 = active and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(240, 80, 80)
     end
 end
 
--- Универсальная функция создания кнопок управления функциями
-local function createFeatureRow(actionName, text, positionY)
-    -- Основная кнопка переключения лимита физики
+-- Создание основных кнопок управления внутри фрейма
+local mainButtons = {}
+local keybindButtons = {}
+local bindingAction = nil
+
+local function createFeatureRow(actionName, positionY)
     local button = Instance.new("TextButton")
-    button.Name = actionName .. "Btn"
-    button.Size = UDim2.new(0, 140, 0, 35)
+    button.Name = actionName .. "MainBtn"
+    button.Size = UDim2.new(0, 145, 0, 35)
     button.Position = UDim2.new(0, 10, 0, positionY)
-    button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     button.TextColor3 = Color3.fromRGB(240, 80, 80)
     button.Font = Enum.Font.SourceSansBold
     button.TextSize = 13
-    button.Text = text .. ": OFF"
+    button.Text = FEATURE_NAMES[actionName] .. ": OFF"
     button.Parent = mainFrame
     Instance.new("UICorner", button).CornerRadius = UDim.new(0, 5)
+    mainButtons[actionName] = button
 
-    -- Кнопка смены горячей клавиши (Keybind)
+    -- Кнопка смены бинда
     local bindBtn = Instance.new("TextButton")
-    bindBtn.Size = UDim2.new(0, 40, 0, 35)
-    bindBtn.Position = UDim2.new(0, 155, 0, positionY)
-    bindBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    bindBtn.Size = UDim2.new(0, 45, 0, 35)
+    bindBtn.Position = UDim2.new(0, 160, 0, positionY)
+    bindBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
     bindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     bindBtn.Text = HOTKEYS[actionName] and HOTKEYS[actionName].Name or "NONE"
     bindBtn.Font = Enum.Font.SourceSans
-    bindBtn.TextSize = 12
+    bindBtn.TextSize = 11
     bindBtn.Parent = mainFrame
     Instance.new("UICorner", bindBtn).CornerRadius = UDim.new(0, 5)
     keybindButtons[actionName] = bindBtn
@@ -161,16 +192,17 @@ local function createFeatureRow(actionName, text, positionY)
     bindBtn.MouseButton1Click:Connect(function()
         bindingAction = actionName
         bindBtn.Text = "..."
-        bindBtn.BackgroundColor3 = Color3.fromRGB(100, 80, 0)
+        bindBtn.BackgroundColor3 = Color3.fromRGB(120, 90, 0)
     end)
 
-    -- Кнопка быстрого вывода на главный экран (Звездочка ⭐)
+    -- Кнопка вывода на Главный Экран (Звездочка ⭐)
     local pin = Instance.new("TextButton")
     pin.Size = UDim2.new(0, 30, 0, 35)
-    pin.Position = UDim2.new(0, 200, 0, positionY)
+    pin.Position = UDim2.new(0, 210, 0, positionY)
     pin.Text = "⭐"
-    pin.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    pin.TextSize = 14
+    pin.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    pin.TextColor3 = Color3.fromRGB(255, 255, 255)
+    pin.TextSize = 13
     pin.Parent = mainFrame
     Instance.new("UICorner", pin).CornerRadius = UDim.new(0, 5)
 
@@ -181,76 +213,60 @@ local function createFeatureRow(actionName, text, positionY)
         else
             local quickBtn = Instance.new("TextButton")
             quickBtn.Name = quickName
-            quickBtn.Size = UDim2.new(0, 140, 0, 35)
+            quickBtn.Size = UDim2.new(1, -10, 0, 32)
             quickBtn.Font = Enum.Font.SourceSansBold
-            quickBtn.TextSize = 12
+            quickBtn.TextSize = 11
             quickBtn.Parent = quickActionsFrame
             Instance.new("UICorner", quickBtn).CornerRadius = UDim.new(0, 5)
             
-            -- Получаем текущее состояние флага динамически
-            local currentState = false
-            if actionName == "Fly" then currentState = isFlying
-            elseif actionName == "Noclip" then currentState = isNoclip
-            elseif actionName == "InfJump" then currentState = isInfJump
-            elseif actionName == "Wallhop" then currentState = isWallhopEnabled end
-            
-            updateQuickActionWidget(actionName, text, currentState, HOTKEYS[actionName])
+            updateQuickWidget(actionName)
             
             quickBtn.MouseButton1Click:Connect(function()
-                button:Click() -- Нажатие по кнопке быстрого доступа активирует основную
+                button:Click() -- Клик по виджету симулирует нажатие основной кнопки
             end)
         end
     end)
-
-    return button
 end
 
--- Обновление стилей основного меню
-local function updateButtonVisual(button, actionName, text, state)
-    if state then
-        button.Text = text .. ": ON"
-        button.BackgroundColor3 = Color3.fromRGB(45, 100, 45)
-        button.TextColor3 = Color3.fromRGB(100, 255, 100)
-    else
-        button.Text = text .. ": OFF"
-        button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-        button.TextColor3 = Color3.fromRGB(240, 80, 80)
-    end
-    updateQuickActionWidget(actionName, text, state, HOTKEYS[actionName])
-end
+-- Отрисовка функциональных рядов
+createFeatureRow("Fly", 50)
+createFeatureRow("Noclip", 95)
+createFeatureRow("InfJump", 140)
+createFeatureRow("Wallhop", 185)
+createFeatureRow("InfSpeed", 230)
 
--- Создаем ряды функций
-local flyBtn = createFeatureRow("Fly", "Fly (Полет)", 50)
-local noclipBtn = createFeatureRow("Noclip", "Noclip (Стены)", 95)
-local infJumpBtn = createFeatureRow("InfJump", "Inf Jump", 140)
-local wallhopBtn = createFeatureRow("Wallhop", "Wallhop", 185)
-
--- Логика смены Keybinds с клавиатуры
+-- Обработка переназначения клавиш
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if bindingAction and input.UserInputType == Enum.UserInputType.Keyboard then
         HOTKEYS[bindingAction] = input.KeyCode
         keybindButtons[bindingAction].Text = input.KeyCode.Name
-        keybindButtons[bindingAction].BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-        
-        -- Обновляем текст на быстрой панели, если она выведена
-        if bindingAction == "Fly" then updateQuickActionWidget("Fly", "Fly (Полет)", isFlying, input.KeyCode)
-        elseif bindingAction == "Noclip" then updateQuickActionWidget("Noclip", "Noclip (Стены)", isNoclip, input.KeyCode)
-        elseif bindingAction == "InfJump" then updateQuickActionWidget("InfJump", "Inf Jump", isInfJump, input.KeyCode)
-        elseif bindingAction == "Wallhop" then updateQuickActionWidget("Wallhop", "Wallhop", isWallhopEnabled, input.KeyCode) end
-        
+        keybindButtons[bindingAction].BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+        updateQuickWidget(bindingAction)
         bindingAction = nil
     end
 end)
 
--- Поля ввода числовых данных физики
+-- Общая функция для обновления визуалов
+local function syncVisuals(actionName)
+    local active = states[actionName]
+    local btn = mainButtons[actionName]
+    if btn then
+        btn.Text = FEATURE_NAMES[actionName] .. (active and ": ON" or ": OFF")
+        btn.BackgroundColor3 = active and Color3.fromRGB(45, 100, 45) or Color3.fromRGB(40, 40, 40)
+        btn.TextColor3 = active and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(240, 80, 80)
+    end
+    updateQuickWidget(actionName)
+end
+
+-- Поля текстового ввода лимитов физики
 local function createInputField(placeholder, positionY)
     local box = Instance.new("TextBox")
-    box.Size = UDim2.new(0, 220, 0, 30)
+    box.Size = UDim2.new(1, -20, 0, 30)
     box.Position = UDim2.new(0, 10, 0, positionY)
     box.PlaceholderText = placeholder
     box.Text = ""
-    box.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
 
 
 
